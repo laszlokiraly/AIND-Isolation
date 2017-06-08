@@ -213,7 +213,8 @@ class MinimaxPlayer(IsolationPlayer):
             raise SearchTimeout()
 
         # TODO: finish this function!
-        raise NotImplementedError
+        return (-1, -1)
+        # raise NotImplementedError
 
 
 class AlphaBetaPlayer(IsolationPlayer):
