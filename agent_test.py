@@ -1,3 +1,4 @@
+#!/Users/laszlo/anaconda2/envs/aind/bin/python
 """This file is provided as a starting template for writing your own unit
 tests to run and debug your minimax and alphabeta agents locally.  The test
 cases used by the project assistant are not public.
@@ -8,6 +9,8 @@ import unittest
 import isolation
 import game_agent
 
+# either deactivate reload, so that the test can be executed without error with atom script
+# or add magic line #!/Users/laszlo/anaconda2/envs/aind/bin/python to top of file
 from importlib import reload
 
 
@@ -20,6 +23,8 @@ class IsolationTest(unittest.TestCase):
         self.player2 = "Player2"
         self.game = isolation.Board(self.player1, self.player2)
 
+    def test_differentPlayers(self):
+        self.assertNotEqual(self.player1, self.player2)
 
 if __name__ == '__main__':
     unittest.main()
