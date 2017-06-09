@@ -2,15 +2,15 @@
 test your agent's strength against a set of known agents using tournament.py
 and include the results in your report.
 """
-import random
-
+import math
+from isolation.isolation import Board
 
 class SearchTimeout(Exception):
     """Subclass base exception for code clarity. """
     pass
 
 
-def custom_score(game, player):
+def custom_score(game: Board, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
 
@@ -34,9 +34,15 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
 
+    if game.is_winner(player):
+        return float("inf")
+
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(own_moves - opp_moves)
 
 def custom_score_2(game, player):
     """Calculate the heuristic value of a game state from the point of view
@@ -208,14 +214,72 @@ class MinimaxPlayer(IsolationPlayer):
                 pseudocode) then you must copy the timer check into the top of
                 each helper function or else your agent will timeout during
                 testing.
+        Algorithm
+        ---------
+        function MINIMAX-DECISION(state) returns an action
+            return arg max a E ACTIONS(s) MIN-VALUE(RESULT(state, a))
         """
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        return (-1, -1)
-        # raise NotImplementedError
+        max_value = -math.inf
+        best_move = (-1, -1)
+        for move in game.get_legal_moves():
+            max_value_before = max_value
+            max_value = max(max_value,
+                            self.min_value(game.forecast_move(move),
+                                           depth - 1))
+            if max_value > max_value_before:
+                best_move = move
+        return best_move
 
+    def max_value(self, board: Board, depth):
+        """
+        function MAX-VALUE(state) returns a utility value
+        if TERMINAL-TEST(state) then return UTILITY(state)
+        v <- -infinity
+        for each a in ACTIONS(state) do
+            v <- MAX(v, MIN-VALUE(RESULT(state, a)))
+        return v
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+        maxi = self
+        utility = board.utility(maxi)
+        if utility != 0:
+            return utility
+        if depth <= 0:
+            return self.score(board, maxi)
+        max_value = -math.inf
+        for move in board.get_legal_moves():
+            max_value = max(max_value,
+                            self.min_value(board.forecast_move(move),
+                                           depth - 1))
+        return max_value
+
+    def min_value(self, board: Board, depth):
+        """
+        function MIN-VALUE(state) returns a utility value
+        if TERMINAL-TEST(state) then return UTILITY(state)
+        v <- infinity
+        for each a in ACTIONS(state) do
+            v <- MIN(v, MAX-VALUE(RESULT(state, a)))
+        return v
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+        mini = self
+        utility = board.utility(mini)
+        if utility != 0:
+            return utility
+        if depth <= 0:
+            return self.score(board, mini)
+        min_value = math.inf
+        for move in board.get_legal_moves():
+            min_value = min(min_value,
+                            self.max_value(board.forecast_move(move),
+                                           depth - 1))
+        return min_value
 
 class AlphaBetaPlayer(IsolationPlayer):
     """Game-playing agent that chooses a move using iterative deepening minimax

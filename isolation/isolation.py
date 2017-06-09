@@ -10,6 +10,7 @@ be available to project reviewers.
 import random
 import timeit
 from copy import copy
+import math
 
 TIME_LIMIT_MILLIS = 150
 
@@ -98,6 +99,16 @@ class Board(object):
         new_board._inactive_player = self._inactive_player
         new_board._board_state = copy(self._board_state)
         return new_board
+
+    def set_board_state(self, board_state):
+        self._board_state = board_state
+        len_board_state = len(self._board_state) - 2
+        self.width = int(math.sqrt(len_board_state))
+        self.height = int(math.sqrt(len_board_state))
+        self.move_count = 0
+        for index, value in enumerate(self._board_state):
+            if value == 1 and index <= len_board_state:
+                self.move_count += 1
 
     def forecast_move(self, move):
         """Return a deep copy of the current game with an input move applied to
@@ -295,7 +306,7 @@ class Board(object):
 
         return out
 
-    def play(self, time_limit=TIME_LIMIT_MILLIS):
+    def play(self, time_limit=TIME_LIMIT_MILLIS, rounds=None):
         """Execute a match between the players by alternately soliciting them
         to select a move and applying it in the game.
 
@@ -316,7 +327,7 @@ class Board(object):
 
         time_millis = lambda: 1000 * timeit.default_timer()
 
-        while True:
+        while (rounds == None) or (rounds > 0):
 
             legal_player_moves = self.get_legal_moves()
             game_copy = self.copy()
@@ -340,3 +351,6 @@ class Board(object):
             move_history.append(list(curr_move))
 
             self.apply_move(curr_move)
+
+            if rounds != None:
+                rounds -= 1
