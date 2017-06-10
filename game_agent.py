@@ -72,9 +72,7 @@ def custom_score_2(game, player):
     if game.is_winner(player):
         return float("inf")
 
-    own_moves = len(game.get_legal_moves(player))
-    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    return float(own_moves - opp_moves)
+    return float(len(game.get_legal_moves(player)))
 
 
 def custom_score_3(game, player):
@@ -105,9 +103,9 @@ def custom_score_3(game, player):
     if game.is_winner(player):
         return float("inf")
 
-    own_moves = len(game.get_legal_moves(player))
-    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    return float(own_moves - opp_moves)
+    w, h = game.width / 2., game.height / 2.
+    y, x = game.get_player_location(player)
+    return float((h - y)**2 + (w - x)**2)
 
 
 class IsolationPlayer:
@@ -419,7 +417,7 @@ class AlphaBetaPlayer(IsolationPlayer):
                             self.min_value(game.forecast_move(move),
                                            depth - 1, alpha, beta))
             if max_value >= beta:
-                return best_move
+                return move
             alpha = max(alpha, max_value)
             if max_value > max_value_before:
                 best_move = move
