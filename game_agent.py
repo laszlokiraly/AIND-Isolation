@@ -2,6 +2,7 @@
 test your agent's strength against a set of known agents using tournament.py
 and include the results in your report.
 """
+import random
 import math
 from isolation.isolation import Board
 
@@ -40,9 +41,8 @@ def custom_score(game: Board, player):
     if game.is_winner(player):
         return float("inf")
 
-    own_moves = len(game.get_legal_moves(player))
-    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    return float(own_moves - opp_moves)
+    return float(len(game.get_legal_moves(player)))
+
 
 def custom_score_2(game, player):
     """Calculate the heuristic value of a game state from the point of view
@@ -103,10 +103,7 @@ def custom_score_3(game, player):
     if game.is_winner(player):
         return float("inf")
 
-    w, h = game.width / 2., game.height / 2.
-    y, x = game.get_player_location(player)
-    return float((h - y)**2 + (w - x)**2)
-
+    return float(len(game.get_legal_moves(player)))
 
 class IsolationPlayer:
     """Base class for minimax and alphabeta agents -- this class is never
@@ -236,6 +233,12 @@ class MinimaxPlayer(IsolationPlayer):
 
         max_value = -math.inf
         best_move = (-1, -1)
+        legal_moves = game.get_legal_moves()
+        if (len(legal_moves) == 1):
+            return legal_moves[0]
+        if legal_moves:
+            best_move = legal_moves[random.randrange(0, len(legal_moves))]
+
         for move in game.get_legal_moves():
             max_value_before = max_value
             max_value = max(max_value,
@@ -411,6 +414,12 @@ class AlphaBetaPlayer(IsolationPlayer):
 
         max_value = -math.inf
         best_move = (-1, -1)
+        legal_moves = game.get_legal_moves()
+        if (len(legal_moves) == 1):
+            return legal_moves[0]
+        if legal_moves:
+            best_move = legal_moves[random.randrange(0, len(legal_moves))]
+
         for move in game.get_legal_moves():
             max_value_before = max_value
             max_value = max(max_value,
