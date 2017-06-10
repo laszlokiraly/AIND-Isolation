@@ -316,11 +316,33 @@ class AlphaBetaPlayer(IsolationPlayer):
         (int, int)
             Board coordinates corresponding to a legal move; may return
             (-1, -1) if there are no available legal moves.
+
+        Algorithm
+        ---------
+        function ITERATIVE-DEEPENING-SEARCH(problem) returns a solution, or failure
+            for depth = 0 to infinity do
+                result <- DEPTH-LIMITED-SEARCH(problem,depth)
+                if result != cutoff then return result
         """
         self.time_left = time_left
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        # Initialize the best move so that this function returns something
+        # in case the search fails due to timeout
+        best_move = (-1, -1)
+
+        try:
+            depth = 0
+            while True:
+                # The try/except block will automatically catch the exception
+                # raised when the timer is about to expire.
+                best_move = self.alphabeta(game, depth)
+                depth += 1
+
+        except SearchTimeout:
+            pass  # Handle any actions required after timeout as needed
+
+        # Return the best move from the last completed search iteration
+        return best_move
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
         """Implement depth-limited minimax search with alpha-beta pruning as
@@ -366,9 +388,83 @@ class AlphaBetaPlayer(IsolationPlayer):
                 pseudocode) then you must copy the timer check into the top of
                 each helper function or else your agent will timeout during
                 testing.
+        Algorithm
+        ---------
+        function ALPHA-BETA-SEARCH(state) returns an action
+            v <- MAX-VALUE(state, -infinity, +infinity)
+            return the action in ACTIONS(state) with value v
         """
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        max_value = -math.inf
+        best_move = (-1, -1)
+        for move in game.get_legal_moves():
+            max_value_before = max_value
+            max_value = max(max_value,
+                            self.min_value(game.forecast_move(move),
+                                           depth - 1, alpha, beta))
+            if max_value >= beta:
+                return best_move
+            alpha = max(alpha, max_value)
+            if max_value > max_value_before:
+                best_move = move
+        return best_move
+
+    def max_value(self, board: Board, depth, alpha, beta):
+        """
+        function MAX-VALUE(state, alpha, beta) returns a utility value
+            if TERMINAL-TEST(state) the return UTILITY(state)
+                v <- -infinity
+            for each a in ACTIONS(state) do
+                v <- MAX(v, MIN-VALUE(RESULT(state, a), alpha, beta))
+                if v >= beta then return v
+                alpha <- MAX(alpha, v)
+            return v
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+        maxi = self
+        utility = board.utility(maxi)
+        if utility != 0:
+            return utility
+        if depth <= 0:
+            return self.score(board, maxi)
+        max_value = -math.inf
+        for move in board.get_legal_moves():
+            max_value = max(max_value,
+                            self.min_value(board.forecast_move(move),
+                                           depth - 1, alpha, beta))
+            if max_value >= beta:
+                return max_value
+            alpha = max(alpha, max_value)
+        return max_value
+
+    def min_value(self, board: Board, depth, alpha, beta):
+        """
+        function MIN-VALUE(state, alpha, beta) returns a utility value
+            if TERMINAL-TEST(state) the return UTILITY(state)
+                v <- +infinity
+            for each a in ACTIONS(state) do
+                v <- MIN(v, MAX-VALUE(RESULT(state, a), alpha, beta))
+                if v <= alpha then return v
+                beta <- MIN(beta, v)
+            return v
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+        mini = self
+        utility = board.utility(mini)
+        if utility != 0:
+            return utility
+        if depth <= 0:
+            return self.score(board, mini)
+        min_value = math.inf
+        for move in board.get_legal_moves():
+            min_value = min(min_value,
+                            self.max_value(board.forecast_move(move),
+                                           depth - 1, alpha, beta))
+            if min_value <= alpha:
+                return min_value
+            beta = min(beta, min_value)
+        return min_value
