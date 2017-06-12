@@ -16,4 +16,12 @@ Starting with all scorers as AB_Improved:
     7     AB_Improved    6  |   4     4  |   6     5  |   5     4  |   6  
 --------------------------------------------------------------------------
 Win Rate:      68.6%        67.1%        74.3%        67.1%    
+
+optional: insert game_agent_playground.py here
+
+- ab_custom: opponents_toes based on improved_score
+- ab_custom2: 2 forecasts in the endgame, else improved_score
+- ab_custom3: mix begin/middle/end game
+
+
 ```
