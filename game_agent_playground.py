@@ -34,6 +34,175 @@ def custom_score(game: Board, player):
     -------
     float
         The heuristic value of the current game state to the specified player.
+
+    results
+    =======
+    2 forecasts:
+    ------------
+     Match #   Opponent     AB_Custom
+                            Won | Lost
+        1       Random      10  |   0
+        2       MM_Open      7  |   3
+        3      MM_Center     8  |   2
+        4     MM_Improved   10  |   0
+        5       AB_Open      4  |   6
+        6      AB_Center     4  |   6
+        7     AB_Improved    4  |   6
+    --------------------------------------------------------------------------
+               Win Rate:      67.1%
+
+    1 forecast:
+    -----------
+     Match #   Opponent     AB_Custom
+                            Won | Lost
+        1       Random      10  |   0
+        2       MM_Open      6  |   4
+        3      MM_Center     9  |   1
+        4     MM_Improved    8  |   2
+        5       AB_Open      4  |   6
+        6      AB_Center     7  |   3
+        7     AB_Improved    5  |   5
+    --------------------------------------------------------------------------
+               Win Rate:      70.0%
+
+    2 forecasts but only in potential endgame (last 15 rounds):
+    -----------------------------------------------------------
+    first try:
+     Match #   Opponent     AB_Custom
+                            Won | Lost
+        1       Random       9  |   1
+        2       MM_Open      6  |   4
+        3      MM_Center     9  |   1
+        4     MM_Improved    6  |   4
+        5       AB_Open      5  |   5
+        6      AB_Center     3  |   7
+        7     AB_Improved    5  |   5
+    --------------------------------------------------------------------------
+               Win Rate:      61.4%
+    second try:
+     Match #   Opponent     AB_Custom
+                            Won | Lost
+        1       Random      10  |   0
+        2       MM_Open      9  |   1
+        3      MM_Center     8  |   2
+        4     MM_Improved    7  |   3
+        5       AB_Open      6  |   4
+        6      AB_Center     6  |   4
+        7     AB_Improved    4  |   6
+    --------------------------------------------------------------------------
+               Win Rate:      71.4%
+
+    VS AB_Improved:
+    ===============
+    2 forecasts but before potential endgame (except 15 rounds):
+    ----------------------------------------------------------
+     Match #   Opponent     AB_Custom
+                            Won | Lost
+        1     AB_Improved   22  |  18
+    --------------------------------------------------------------------------
+               Win Rate:      55.0%
+
+    """
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    opponent = game.get_opponent(player)
+
+    own_moves = []
+    opp_moves = []
+
+    if len(game.get_blank_spaces()) <= 25:
+        # 2 forecasts
+        for move_player in game.get_legal_moves(player):
+            moves_opponent = game.forecast_move(move_player).get_legal_moves(opponent)
+            for move_opponent in moves_opponent:
+                ply = game.forecast_move(move_opponent)
+                own_moves += ply.get_legal_moves(player)
+                opp_moves += ply.get_legal_moves(opponent)
+    else:
+        own_moves = game.get_legal_moves(player)
+        opp_moves = game.get_legal_moves(opponent)
+
+
+    return float(len(own_moves) - len(opp_moves))
+
+
+def custom_score_2(game, player):
+    """Calculate the heuristic value of a game state from the point of view
+    of the given player.
+
+    Note: this function should be called from within a Player instance as
+    `self.score()` -- you should not need to call this function directly.
+
+    Parameters
+    ----------
+    game : `isolation.Board`
+        An instance of `isolation.Board` encoding the current state of the
+        game (e.g., player locations and blocked cells).
+
+    player : object
+        A player instance in the current game (i.e., an object corresponding to
+        one of the player objects `game.__player_1__` or `game.__player_2__`.)
+
+    Returns
+    -------
+    float
+        The heuristic value of the current game state to the specified player.
+    """
+    opponent = game.get_opponent(player)
+
+    own_moves = []
+    opp_moves = []
+
+    # 1 forecast
+    for move_player in game.get_legal_moves(player):
+        ply = game.forecast_move(move_player)
+        own_moves += ply.get_legal_moves(player)
+        opp_moves += ply.get_legal_moves(opponent)
+
+    return float(len(own_moves) - len(opp_moves))
+
+
+def custom_score_3(game, player):
+    """Calculate the heuristic value of a game state from the point of view
+    of the given player.
+
+    Note: this function should be called from within a Player instance as
+    `self.score()` -- you should not need to call this function directly.
+
+    Parameters
+    ----------
+    game : `isolation.Board`
+        An instance of `isolation.Board` encoding the current state of the
+        game (e.g., player locations and blocked cells).
+
+    player : object
+        A player instance in the current game (i.e., an object corresponding to
+        one of the player objects `game.__player_1__` or `game.__player_2__`.)
+
+    Returns
+    -------
+    float
+        The heuristic value of the current game state to the specified player.
+
+    Result
+    ------
+     Match #   Opponent    AB_Custom_3
+                            Won | Lost
+        1       Random      50  |   0
+        2       MM_Open     40  |  10
+        3      MM_Center    44  |   6
+        4     MM_Improved   40  |  10
+        5       AB_Open     25  |  25
+        6      AB_Center    34  |  16
+        7     AB_Improved   26  |  24
+    --------------------------------------------------------------------------
+               Win Rate:      74.0%
+
+    Blanks mean:  18.302857142857142
     """
     if game.is_loser(player):
         return float("-inf")
@@ -61,60 +230,7 @@ def others_toe(game, player, other_player):
 
     return game.get_player_location(other_player) in player_moves
 
-def custom_score_2(game, player):
-    """Calculate the heuristic value of a game state from the point of view
-    of the given player.
-
-    Note: this function should be called from within a Player instance as
-    `self.score()` -- you should not need to call this function directly.
-
-    Parameters
-    ----------
-    game : `isolation.Board`
-        An instance of `isolation.Board` encoding the current state of the
-        game (e.g., player locations and blocked cells).
-
-    player : object
-        A player instance in the current game (i.e., an object corresponding to
-        one of the player objects `game.__player_1__` or `game.__player_2__`.)
-
-    Returns
-    -------
-    float
-        The heuristic value of the current game state to the specified player.
-    """
-    if game.is_loser(player):
-        return float("-inf")
-
-    if game.is_winner(player):
-        return float("inf")
-
-    opponent = game.get_opponent(player)
-
-    own_moves = []
-    opp_moves = []
-
-    if len(game.get_blank_spaces()) <= 25:
-        # 1 forecast
-        # for move_player in game.get_legal_moves(player):
-        #     ply = game.forecast_move(move_player)
-        #     own_moves += ply.get_legal_moves(player)
-        #     opp_moves += ply.get_legal_moves(opponent)
-        # 2 forecasts
-        for move_player in game.get_legal_moves(player):
-            moves_opponent = game.forecast_move(move_player).get_legal_moves(opponent)
-            for move_opponent in moves_opponent:
-                ply = game.forecast_move(move_opponent)
-                own_moves += ply.get_legal_moves(player)
-                opp_moves += ply.get_legal_moves(opponent)
-    else:
-        own_moves = game.get_legal_moves(player)
-        opp_moves = game.get_legal_moves(opponent)
-
-    return float(len(own_moves) - len(opp_moves))
-
-
-def custom_score_3(game, player):
+def custom_score_4(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
 
@@ -163,7 +279,48 @@ def custom_score_3(game, player):
                 own_moves += ply.get_legal_moves(player)
                 opp_moves += ply.get_legal_moves(opponent)
 
+
         return float(len(own_moves) - len(opp_moves))
+
+
+def custom_score_5(game, player):
+    """Calculate the heuristic value of a game state from the point of view
+    of the given player.
+
+    Note: this function should be called from within a Player instance as
+    `self.score()` -- you should not need to call this function directly.
+
+    Parameters
+    ----------
+    game : `isolation.Board`
+        An instance of `isolation.Board` encoding the current state of the
+        game (e.g., player locations and blocked cells).
+
+    player : object
+        A player instance in the current game (i.e., an object corresponding to
+        one of the player objects `game.__player_1__` or `game.__player_2__`.)
+
+    Returns
+    -------
+    float
+        The heuristic value of the current game state to the specified player.
+    """
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    opponent = game.get_opponent(player)
+    multiplier = 1
+
+    # find a blocking position
+    if game.get_player_location() in game.get_legal_moves(opponent):
+        multiplier = 10
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(opponent))
+    return float(own_moves - opp_moves)
+
 
 class IsolationPlayer:
     """Base class for minimax and alphabeta agents -- this class is never
@@ -320,8 +477,9 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         maxi = self
-        if board.is_winner(maxi) or board.is_loser(maxi):
-            return board.utility(maxi)
+        utility = board.utility(maxi)
+        if utility != 0:
+            return utility
         if depth <= 0:
             return self.score(board, maxi)
         max_value = -math.inf
@@ -343,8 +501,9 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         mini = self
-        if board.is_winner(mini) or board.is_loser(mini):
-            return board.utility(mini)
+        utility = board.utility(mini)
+        if utility != 0:
+            return utility
         if depth <= 0:
             return self.score(board, mini)
         min_value = math.inf
@@ -504,8 +663,9 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         maxi = self
-        if board.is_winner(maxi) or board.is_loser(maxi):
-            return board.utility(maxi)
+        utility = board.utility(maxi)
+        if utility != 0:
+            return utility
         if depth <= 0:
             return self.score(board, maxi)
         max_value = -math.inf
@@ -532,8 +692,9 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         mini = self
-        if board.is_winner(mini) or board.is_loser(mini):
-            return board.utility(mini)
+        utility = board.utility(mini)
+        if utility != 0:
+            return utility
         if depth <= 0:
             return self.score(board, mini)
         min_value = math.inf
@@ -545,3 +706,19 @@ class AlphaBetaPlayer(IsolationPlayer):
                 return min_value
             beta = min(beta, min_value)
         return min_value
+
+"""
+ Match #   Opponent    AB_Improved   AB_Custom   AB_Custom_2  AB_Custom_3  AB_Custom_4  AB_Custom_5
+                        Won | Lost   Won | Lost   Won | Lost   Won | Lost   Won | Lost   Won | Lost
+    1       Random      49  |   1    48  |   2    48  |   2    47  |   3    50  |   0    47  |   3
+    2       MM_Open     38  |  12    33  |  17    38  |  12    32  |  18    38  |  12    35  |  15
+    3      MM_Center    45  |   5    41  |   9    45  |   5    43  |   7    42  |   8    44  |   6
+    4     MM_Improved   31  |  19    32  |  18    36  |  14    32  |  18    36  |  14    33  |  17
+    5       AB_Open     27  |  23    20  |  30    26  |  24    20  |  30    20  |  30    16  |  34
+    6      AB_Center    30  |  20    23  |  27    23  |  27    28  |  22    26  |  24    24  |  26
+    7     AB_Improved   26  |  24    20  |  30    21  |  29    20  |  30    25  |  25    21  |  29
+--------------------------------------------------------------------------
+           Win Rate:      70.3%        62.0%        67.7%        63.4%        67.7%        62.9%
+
+Blanks mean:  18.467142857142857
+"""

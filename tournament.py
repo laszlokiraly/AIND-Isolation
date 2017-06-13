@@ -46,6 +46,7 @@ def play_round(cpu_agent, test_agents, win_counts, num_matches):
     """
     timeout_count = 0
     forfeit_count = 0
+    blank_spaces_count = 0
     for _ in range(num_matches):
 
         games = sum([[Board(cpu_agent.player, agent.player),
@@ -63,12 +64,14 @@ def play_round(cpu_agent, test_agents, win_counts, num_matches):
             winner, _, termination = game.play(time_limit=TIME_LIMIT)
             win_counts[winner] += 1
 
+            blank_spaces_count += len(game.get_blank_spaces())
+
             if termination == "timeout":
                 timeout_count += 1
             elif termination == "forfeit":
                 forfeit_count += 1
 
-    return timeout_count, forfeit_count
+    return timeout_count, forfeit_count, blank_spaces_count
 
 
 def update(total_wins, wins):
@@ -83,6 +86,7 @@ def play_matches(cpu_agents, test_agents, num_matches):
     total_timeouts = 0.
     total_forfeits = 0.
     total_matches = 2 * num_matches * len(cpu_agents)
+    total_blanks = 0
 
     print("\n{:^9}{:^13}".format("Match #", "Opponent") + ''.join(['{:^13}'.format(x[1].name) for x in enumerate(test_agents)]))
     print("{:^9}{:^13} ".format("", "") +  ' '.join(['{:^5}| {:^5}'.format("Won", "Lost") for x in enumerate(test_agents)]))
@@ -96,6 +100,7 @@ def play_matches(cpu_agents, test_agents, num_matches):
         counts = play_round(agent, test_agents, wins, num_matches)
         total_timeouts += counts[0]
         total_forfeits += counts[1]
+        total_blanks += counts[2]
         total_wins = update(total_wins, wins)
         _total = 2 * num_matches
         round_totals = sum([[wins[agent.player], _total - wins[agent.player]]
@@ -113,6 +118,7 @@ def play_matches(cpu_agents, test_agents, num_matches):
                 "{:.1f}%".format(100 * total_wins[x[1].player] / total_matches)
             ) for x in enumerate(test_agents)
     ]))
+    print("\nBlanks mean: ", (total_blanks / (total_matches * len(test_agents))))
 
     if total_timeouts:
         print(("\nThere were {} timeouts during the tournament -- make sure " +
