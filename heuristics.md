@@ -17,3 +17,5 @@ Starting with all scorers as AB_Improved:
 --------------------------------------------------------------------------
 Win Rate:      68.6%        67.1%        74.3%        67.1%    
 ```
+
+My first impression is that the range of the win rate for a small number of games is surprisingly large. It ranges from 67.1% to 74.3%, that's a 7.2% difference.
