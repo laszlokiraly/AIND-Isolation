@@ -2,7 +2,6 @@
 test your agent's strength against a set of known agents using tournament.py
 and include the results in your report.
 """
-import random
 import math
 from isolation.isolation import Board
 
@@ -42,18 +41,41 @@ def custom_score(game: Board, player):
         return float("inf")
 
     opponent = game.get_opponent(player)
-    multiplier = 1
 
-    if others_toe(game, player, opponent):
-        multiplier = 2
+    progress = progress_of_game(game)
 
-    own_moves = len(game.get_legal_moves(player)) * multiplier
-    opp_moves = len(game.get_legal_moves(opponent))
+    if progress < 0.25:
+        # improved_score for the first part of the game
+        own_moves = len(game.get_legal_moves(player))
+        opp_moves = len(game.get_legal_moves(opponent))
 
-    return float(own_moves - opp_moves)
+        return float(own_moves - opp_moves)
+    elif progress < 0.5:
+        # close in to oppenent
+        w, h = game.get_player_location(opponent)
+        y, x = game.get_player_location(player)
+        return float((h - y)**2 + (w - x)**2)
+    else:
+        # tread on his toes
+        multiplier = 1
+
+        if others_toe(game, player, opponent):
+            multiplier = 4
+
+        # if a tow is hit, we put some positive weight on players moves
+        own_moves = len(game.get_legal_moves(player)) * multiplier
+        opp_moves = len(game.get_legal_moves(opponent))
+
+        return float(own_moves - opp_moves)
+
+def progress_of_game(game):
+    spaces = game.width * game.height
+    return spaces - len(game.get_blank_spaces()) / spaces
 
 def others_toe(game, player, other_player):
-    # find a position, which steps on the toe of the opponent
+    """
+    check if player's position "treads on the opponent's toe"
+    """
     r, c = game.get_player_location(player)
     directions = [(-2, -1), (-2, 1), (-1, -2), (-1, 2),
                   (1, -2), (1, 2), (2, -1), (2, 1)]
@@ -90,28 +112,15 @@ def custom_score_2(game, player):
         return float("inf")
 
     opponent = game.get_opponent(player)
+    multiplier = 1
 
-    own_moves = []
-    opp_moves = []
+    if others_toe(game, player, opponent):
+        multiplier = 4
 
-    if len(game.get_blank_spaces()) <= 25:
-        # 1 forecast
-        # for move_player in game.get_legal_moves(player):
-        #     ply = game.forecast_move(move_player)
-        #     own_moves += ply.get_legal_moves(player)
-        #     opp_moves += ply.get_legal_moves(opponent)
-        # 2 forecasts
-        for move_player in game.get_legal_moves(player):
-            moves_opponent = game.forecast_move(move_player).get_legal_moves(opponent)
-            for move_opponent in moves_opponent:
-                ply = game.forecast_move(move_opponent)
-                own_moves += ply.get_legal_moves(player)
-                opp_moves += ply.get_legal_moves(opponent)
-    else:
-        own_moves = game.get_legal_moves(player)
-        opp_moves = game.get_legal_moves(opponent)
+    own_moves = len(game.get_legal_moves(player)) * multiplier
+    opp_moves = len(game.get_legal_moves(opponent))
 
-    return float(len(own_moves) - len(opp_moves))
+    return float(own_moves - opp_moves)
 
 
 def custom_score_3(game, player):
@@ -136,9 +145,15 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
     opponent = game.get_opponent(player)
 
-    progress = game.move_count / len(game.get_blank_spaces())
+    progress = progress_of_game(game)
 
     if progress < 0.25:
         # stay at center, and away from corners
@@ -146,24 +161,21 @@ def custom_score_3(game, player):
         y, x = game.get_player_location(player)
         return float(-(h - y)**2 - (w - x)**2)
     elif progress < 0.5:
-        own_moves = len(game.get_legal_moves(player))
-        opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-        return float(own_moves - opp_moves)
+        # close in on oppenent
+        w, h = game.get_player_location(opponent)
+        y, x = game.get_player_location(player)
+        return float((h - y)**2 + (w - x)**2)
     else:
-        opponent = game.get_opponent(player)
+        # tread on his toes
+        multiplier = 1
 
-        own_moves = []
-        opp_moves = []
+        if others_toe(game, player, opponent):
+            multiplier = 4
 
-        # 2 forecasts
-        for move_player in game.get_legal_moves(player):
-            moves_opponent = game.forecast_move(move_player).get_legal_moves(opponent)
-            for move_opponent in moves_opponent:
-                ply = game.forecast_move(move_opponent)
-                own_moves += ply.get_legal_moves(player)
-                opp_moves += ply.get_legal_moves(opponent)
+        own_moves = len(game.get_legal_moves(player)) * multiplier
+        opp_moves = len(game.get_legal_moves(opponent))
 
-        return float(len(own_moves) - len(opp_moves))
+        return float(own_moves - opp_moves)
 
 class IsolationPlayer:
     """Base class for minimax and alphabeta agents -- this class is never

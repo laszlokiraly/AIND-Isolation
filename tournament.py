@@ -118,7 +118,7 @@ def play_matches(cpu_agents, test_agents, num_matches):
                 "{:.1f}%".format(100 * total_wins[x[1].player] / total_matches)
             ) for x in enumerate(test_agents)
     ]))
-    print("\nBlanks mean: ", (total_blanks / (total_matches * len(test_agents))))
+    print("\nAverage blanks left at the end of the games: ", (total_blanks / (total_matches * len(test_agents))))
 
     if total_timeouts:
         print(("\nThere were {} timeouts during the tournament -- make sure " +

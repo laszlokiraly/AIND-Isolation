@@ -1,64 +1,59 @@
-Starting with all scorers as AB_Improved:
+# Heuristics Analysis
 
-```
-                        *************************                         
-                             Playing Matches                              
-                        *************************                         
-
- Match #   Opponent    AB_Improved   AB_Custom   AB_Custom_2  AB_Custom_3
-                        Won | Lost   Won | Lost   Won | Lost   Won | Lost
-    1       Random      10  |   0    10  |   0    10  |   0    10  |   0  
-    2       MM_Open      7  |   3     7  |   3     7  |   3     9  |   1  
-    3      MM_Center     7  |   3     9  |   1    10  |   0     8  |   2  
-    4     MM_Improved    7  |   3     7  |   3     8  |   2     6  |   4  
-    5       AB_Open      5  |   5     5  |   5     6  |   4     4  |   6  
-    6      AB_Center     6  |   4     5  |   5     6  |   4     6  |   4  
-    7     AB_Improved    6  |   4     4  |   6     5  |   5     4  |   6  
---------------------------------------------------------------------------
-Win Rate:      68.6%        67.1%        74.3%        67.1%    
-
-optional: insert game_agent_playground.py here
-
-- ab_custom: opponents_toes based on improved_score
-- ab_custom2: 2 forecasts in the endgame, else improved_score
-- ab_custom3: mix begin/middle/end game
-
-best ab_custom:
-Match #   Opponent    AB_Improved   AB_Custom   AB_Custom_2  AB_Custom_3
-                       Won | Lost   Won | Lost   Won | Lost   Won | Lost
-   1       Random      95  |   5    93  |   7    95  |   5    94  |   6
-   2       MM_Open     78  |  22    69  |  31    71  |  29    76  |  24
-   3      MM_Center    83  |  17    92  |   8    81  |  19    85  |  15
-   4     MM_Improved   76  |  24    73  |  27    68  |  32    69  |  31
-   5       AB_Open     53  |  47    54  |  46    50  |  50    52  |  48
-   6      AB_Center    48  |  52    59  |  41    51  |  49    51  |  49
-   7     AB_Improved   43  |  57    49  |  51    41  |  59    43  |  57
---------------------------------------------------------------------------
-          Win Rate:      68.0%        69.9%        65.3%        67.1%
-
-but usually on similar level as ab improved:
-Match #   Opponent    AB_Improved   AB_Custom   AB_Custom_2  AB_Custom_3
-                       Won | Lost   Won | Lost   Won | Lost   Won | Lost
-   1       Random      92  |   8    96  |   4    94  |   6    91  |   9
-   2       MM_Open     80  |  20    77  |  23    71  |  29    69  |  31
-   3      MM_Center    91  |   9    84  |  16    92  |   8    88  |  12
-   4     MM_Improved   74  |  26    71  |  29    68  |  32    63  |  37
-   5       AB_Open     54  |  46    54  |  46    49  |  51    45  |  55
-   6      AB_Center    59  |  41    57  |  43    51  |  49    46  |  54
-   7     AB_Improved   49  |  51    53  |  47    44  |  56    42  |  58
---------------------------------------------------------------------------
-          Win Rate:      71.3%        70.3%        67.0%        63.4%
-
-     1       Random      91  |   9    88  |  12    96  |   4    92  |   8
-     2       MM_Open     75  |  25    73  |  27    81  |  19    66  |  34
-     3      MM_Center    83  |  17    86  |  14    87  |  13    89  |  11
-     4     MM_Improved   83  |  17    72  |  28    62  |  38    66  |  34
-     5       AB_Open     59  |  41    53  |  47    44  |  56    44  |  56
-     6      AB_Center    60  |  40    58  |  42    55  |  45    53  |  47
-     7     AB_Improved   46  |  54    45  |  55    48  |  52    43  |  57
- --------------------------------------------------------------------------
-            Win Rate:      71.0%        67.9%        67.6%        64.7%
-
-```
-
+## Statistics on win/play rates
 My first impression is that the range of the win rate for a small number of games is surprisingly large. It ranges from 67.1% to 74.3%, that's a 7.2% difference.
+For quick experimenting and to get a feeling for the heuristics it's ok.
+But a lot more games need to be played to get more consistent numbers on win/lose rates.
+
+## Forecasting Scorers
+When i started playing with scorers, i thought that, to find potential partitions on the board for solving the horizon effect, i would like to know more than just legal moves of the players and opponent of the current pry. So i started to forecast one and two rounds and started counting and summing the legal moves and used it for scoring. In small tests, with little games, usually they did not score much better, but worse than the improved scorer.
+I had the feeling that forecasting moves in the scorer was a bad idea, because the score should have a static overhead to be able to make a better assumption about the total cost of the players overhead including AB. Another reason i stopped using expensive forecasts in the scorer was that the forecasting is already part of AB, so the scorer would just circumvent AB pruning, rendering it being effectively slower.
+
+## Scorer's Knowledge of the Game
+But what does the scorer know about the game and it's state? It knows the dimensions of the board, the position of the players, it knows how many rounds have been played and it knows how many blank spaces there are left.
+The legal moves of the players can be evaluated and counted. The scorer can also find out if it reached a terminal state by asking the board if there is a winner in the current pry.
+
+## Progress of the Game
+Given these informations, i defined a progress from the number of spaces and the blank spaces of the board. This would help the scorer to differentiate between start, middle and end game.
+I did some statistics on the average of the left blanks at every end of a game and found it out to be around 18.5 for a 7x7 board, so a game usually ends at a progress of roughly 0.6.
+I defined the phases of the game:
+- start phase for a progress less than 0.25
+- middle phase for a progress less than 0.5
+- end phase: rest
+
+## Tread on opponent's toe
+I made a helper function to find out if the player is on a space from which the opponent is reachable within one move. I use it to multiply the improved score.
+This special move, "tread on the opponent's toe" removes one of the legal moves of the opponent, which i think can be of an advantage (of course there are special cases when it's not, which are hard to find because of the horizon effect).
+
+The scorers:
+
+1 calculates current progress
+    - start: uses improved score as long as progress is less than 0.25
+    - middle: tries to close in on the opponent
+    - end: tries to step on the toe of the opponent
+2 always tries to step on the toe of the opponent
+3 calculates current progress
+    - start: tries to stay at the center of the board
+    - middle: tries to close in on the opponent
+    - end: tries to step on the toe of the opponent
+
+## Results:
+```
+
+```
+
+## Analysis of Custom Score 1
+
+- Random
+- Minimax Open
+- Minimax Center
+- Minimax Improved
+- Alpha Beta Open
+- Alpha Beta Center
+- Alpha Beta Improved
+
+## Improvements, ideas
+Some thoughts on improvements, thinking outside of the scorer.
+- Partitioning:
+    - for all free spaces check if the space are unreachable (i.e. no legal moves from that space), this number can be an indicator for when the end game is about to start
+- More Variations and combinations of improved score, moving around (staying in the center or moving in circles?), stepping on toes, visit quadrants with potentially more blank spaces,...
