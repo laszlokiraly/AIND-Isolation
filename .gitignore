@@ -99,3 +99,7 @@ ENV/
 # ignore udacity submission files
 isolation-*.zip
 isolation-result-*.json
+
+# ignore generated artifacts
+heuristic_analysis.pdf
+research_review.pdf

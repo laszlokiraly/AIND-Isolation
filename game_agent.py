@@ -10,6 +10,24 @@ class SearchTimeout(Exception):
     pass
 
 
+def blanks_left_percent(game):
+    """
+    calculates the percentage of free spaces for given game
+    """
+    spaces = game.width * game.height
+    return (spaces - len(game.get_blank_spaces())) / spaces
+
+def others_toe(game, player, other_player):
+    """
+    check if player's position "treads on the opponent's toe"
+    """
+    r, c = game.get_player_location(player)
+    directions = [(-2, -1), (-2, 1), (-1, -2), (-1, 2),
+                  (1, -2), (1, 2), (2, -1), (2, 1)]
+    player_moves = [(r + dr, c + dc) for dr, dc in directions]
+
+    return game.get_player_location(other_player) in player_moves
+
 def custom_score(game: Board, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
@@ -42,46 +60,28 @@ def custom_score(game: Board, player):
 
     opponent = game.get_opponent(player)
 
-    progress = progress_of_game(game)
+    progress = blanks_left_percent(game)
 
-    if progress < 0.25:
-        # improved_score for the first part of the game
+    if progress < 0.5:
+        if others_toe(game, player, opponent):
+            return 1
+
+        # close in on opponent
+        w, h = game.get_player_location(opponent)
+        y, x = game.get_player_location(player)
+        return float(-(h - y)**2 - (w - x)**2)
+    else:
+        # tread on his toes
+        multiplier = 1.0
+
+        if others_toe(game, player, opponent):
+            multiplier = 2.0
+
+        # if a toe is hit, we put some positive weight on players moves
         own_moves = len(game.get_legal_moves(player))
         opp_moves = len(game.get_legal_moves(opponent))
 
-        return float(own_moves - opp_moves)
-    elif progress < 0.5:
-        # close in to oppenent
-        w, h = game.get_player_location(opponent)
-        y, x = game.get_player_location(player)
-        return float((h - y)**2 + (w - x)**2)
-    else:
-        # tread on his toes
-        multiplier = 1
-
-        if others_toe(game, player, opponent):
-            multiplier = 4
-
-        # if a tow is hit, we put some positive weight on players moves
-        own_moves = len(game.get_legal_moves(player)) * multiplier
-        opp_moves = len(game.get_legal_moves(opponent))
-
-        return float(own_moves - opp_moves)
-
-def progress_of_game(game):
-    spaces = game.width * game.height
-    return spaces - len(game.get_blank_spaces()) / spaces
-
-def others_toe(game, player, other_player):
-    """
-    check if player's position "treads on the opponent's toe"
-    """
-    r, c = game.get_player_location(player)
-    directions = [(-2, -1), (-2, 1), (-1, -2), (-1, 2),
-                  (1, -2), (1, 2), (2, -1), (2, 1)]
-    player_moves = [(r + dr, c + dc) for dr, dc in directions]
-
-    return game.get_player_location(other_player) in player_moves
+        return float(own_moves - opp_moves) * multiplier
 
 def custom_score_2(game, player):
     """Calculate the heuristic value of a game state from the point of view
@@ -112,16 +112,14 @@ def custom_score_2(game, player):
         return float("inf")
 
     opponent = game.get_opponent(player)
-    multiplier = 1
 
     if others_toe(game, player, opponent):
-        multiplier = 4
+        return 1
 
-    own_moves = len(game.get_legal_moves(player)) * multiplier
-    opp_moves = len(game.get_legal_moves(opponent))
-
-    return float(own_moves - opp_moves)
-
+    # close in on oppenent
+    w, h = game.get_player_location(opponent)
+    y, x = game.get_player_location(player)
+    return float(-(h - y)**2 - (w - x)**2)
 
 def custom_score_3(game, player):
     """Calculate the heuristic value of a game state from the point of view
@@ -153,7 +151,7 @@ def custom_score_3(game, player):
 
     opponent = game.get_opponent(player)
 
-    progress = progress_of_game(game)
+    progress =  blanks_left_percent(game)
 
     if progress < 0.25:
         # stay at center, and away from corners
@@ -164,18 +162,18 @@ def custom_score_3(game, player):
         # close in on oppenent
         w, h = game.get_player_location(opponent)
         y, x = game.get_player_location(player)
-        return float((h - y)**2 + (w - x)**2)
+        return float(-(h - y)**2 -(w - x)**2)
     else:
         # tread on his toes
-        multiplier = 1
+        multiplier = 1.0
 
         if others_toe(game, player, opponent):
-            multiplier = 4
+            multiplier = 2.0
 
-        own_moves = len(game.get_legal_moves(player)) * multiplier
+        own_moves = len(game.get_legal_moves(player))
         opp_moves = len(game.get_legal_moves(opponent))
 
-        return float(own_moves - opp_moves)
+        return float(own_moves - opp_moves) * multiplier
 
 class IsolationPlayer:
     """Base class for minimax and alphabeta agents -- this class is never
@@ -485,7 +483,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         max_value = -math.inf
         best_move = (-1, -1)
         legal_moves = game.get_legal_moves()
-        if (len(legal_moves) == 1):
+        if len(legal_moves) == 1:
             return legal_moves[0]
         if legal_moves:
             best_move = legal_moves[0]
@@ -547,6 +545,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         if board.is_winner(mini) or board.is_loser(mini):
             return board.utility(mini)
         if depth <= 0:
+            # what is the score function of the opponent? certainly not ours!
             return self.score(board, mini)
         min_value = math.inf
         for move in board.get_legal_moves():
