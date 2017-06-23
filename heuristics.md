@@ -66,14 +66,23 @@ Minimax vs Alpha Beta applies here too.
 The performance is worse than against MM_Open, because the Improved Scorer also counts the opponent's moves. But still "Improved Stalker" slightly outperforms it's rivals.
 
 ### AB_Open(53.2% win rate)
-Now that Alpha Beta competes against Alpha Beta, which means that for the following matches the scorer is much more important.
-It is interesting to see that AB_Open almost en pair. Maybe it's because of it's cheap scorer function which only evaluates the number of it's own legal moves.
+Now that Alpha Beta competes against Alpha Beta, the scorer becomes much more important.
+It is interesting to see that AB_Open is almost en pair. Maybe it's because of it's cheap scorer function which only evaluates the number of it's own legal moves.
 
 ### AB_Center(54.4% win rate)
 AB_Center scorer only looks at it's own position. The custom scorer takes the opponent's position into account, so together with the aggressive improved score in the end phase the custom scorer has a slight advantage.
 
 ### AB_Improved(45.8% win rate)
 It's hard to win against improved score, because it is an efficient and high quality prediction heuristic. Rewarding of hitting the toes in the end phase does probably not generate better predictions.
+
+## Conclusion
+
+Generally speaking, the heuristic which is able to go deeper in it's search tree is able to make better predictions, especially in the endgame. To achieve this, the scorer should be as cheap as possible and as accurate as necessary.
+
+My best scorer does some extra calculations compared to AB_Improved, preventing it to look further ahead in the endgame, which would explain its bad performance in the direct duels.
+
+I chose "Improved Stalker" as my best scorer, because of it's best overall performance. I preferred it over Custom_score_2, because "Improved Stalker" has a notion of the phases of the game whereas Custom_score_2 does not.
+Compared to Custom_score_3, which mostly just moves around the board, my best scorer felt more promising, because of it's strategy to stick to the opponent and potentially take away his moves.
 
 ## Improvements, ideas
 Some thoughts on improvements, thinking outside of the scorer.
